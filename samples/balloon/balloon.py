@@ -33,6 +33,9 @@ import json
 import datetime
 import numpy as np
 import skimage.draw
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
@@ -69,7 +72,7 @@ class BalloonConfig(Config):
     NUM_CLASSES = 1 + 1  # Background + balloon
 
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 25
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
@@ -156,7 +159,7 @@ class BalloonDataset(utils.Dataset):
         # Convert polygons to a bitmap mask of shape
         # [height, width, instance_count]
         info = self.image_info[image_id]
-        mask = np.zeros([info["height"], info["width"], len(info["polygons"])],
+        mask = np.zeros([info["height"]+1, info["width"]+1, len(info["polygons"])],
                         dtype=np.uint8)
         for i, p in enumerate(info["polygons"]):
             # Get indexes of pixels inside the polygon and set them to 1
@@ -193,9 +196,10 @@ def train(model):
     # COCO trained weights, we don't need to train too long. Also,
     # no need to train all layers, just the heads should do it.
     print("Training network heads")
+    epochs = 5   
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=30,
+                epochs=epochs,
                 layers='heads')
 
 
