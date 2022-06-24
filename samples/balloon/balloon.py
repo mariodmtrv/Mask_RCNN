@@ -34,12 +34,14 @@ import datetime
 import numpy as np
 import skimage.draw
 import warnings
+import logging
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
-
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logger = logging.getLogger('BALLOON_EXAMPLES')
 # Import Mask RCNN
 sys.path.append(ROOT_DIR)  # To find local version of the library
 from mrcnn.config import Config
@@ -114,7 +116,7 @@ class BalloonDataset(utils.Dataset):
         # Note: In VIA 2.0, regions was changed from a dict to a list.
         annotations = json.load(open(os.path.join(dataset_dir, "via_region_data.json")))
         annotations = list(annotations.values())  # don't need the dict keys
-
+        logger.info(annotations)
         # The VIA tool saves images in the JSON even if they don't have any
         # annotations. Skip unannotated images.
         annotations = [a for a in annotations if a['regions']]
@@ -164,7 +166,7 @@ class BalloonDataset(utils.Dataset):
         for i, p in enumerate(info["polygons"]):
             # Get indexes of pixels inside the polygon and set them to 1
             rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
-            mask[rr, cc, i] = 1
+            mask[rr-1, cc-1, i] = 1
 
         # Return mask, and array of class IDs of each instance. Since we have
         # one class ID only, we return an array of 1s
