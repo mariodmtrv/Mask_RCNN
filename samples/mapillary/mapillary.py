@@ -75,8 +75,9 @@ class MapillaryDataset(utils.Dataset):
 
 
         # Train or validation dataset?
-        assert subset in ["training", "validation"]
-        dataset_dir = os.path.join(dataset_dir, subset)
+        assert subset in ["train", "val"]
+        subset_dir = {"train": "training", "val": "validation"}
+        dataset_dir = os.path.join(dataset_dir, subset_dir[subset])
         images_dir = "{}/images".format(dataset_dir)
         for item in os.listdir(images_dir):
             if os.path.isfile(os.path.join(images_dir, item)):
@@ -90,7 +91,7 @@ class MapillaryDataset(utils.Dataset):
                 instance_label_array = np.array(instance_array / 256, dtype=np.uint8)
                 # instance_ids_array = np.array(instance_array % 256, dtype=np.uint8)
                 classes = np.unique(instance_label_array)
-                classes = classes.astype('int')
+                classes = classes.astype('int32')
                 instance_masks = []
                 for clazz in classes:
                     layer = np.zeros(instance_label_array.shape, dtype=np.bool8)
