@@ -88,8 +88,9 @@ class MapillaryDataset(utils.Dataset):
 
                 # now we split the instance_array into labels and instance ids
                 instance_label_array = np.array(instance_array / 256, dtype=np.uint8)
-                instance_ids_array = np.array(instance_array % 256, dtype=np.uint8)
+                # instance_ids_array = np.array(instance_array % 256, dtype=np.uint8)
                 classes = np.unique(instance_label_array)
+                classes = classes.astype('int')
                 instance_masks = []
                 for clazz in classes:
                     layer = np.zeros(instance_label_array.shape, dtype=np.bool8)
