@@ -92,11 +92,10 @@ class MapillaryDataset(utils.Dataset):
                 classes = np.unique(instance_label_array)
                 instance_masks = []
                 for clazz in classes:
-                    layer = np.zeros(instance_label_array.shape)
-                    #layer[layer != clazz] = 0
-                    layer[instance_label_array == clazz] = 1
+                    layer = np.zeros(instance_label_array.shape, dtype=np.bool8)
+                    layer[instance_label_array == clazz] = True
                     instance_masks.append(layer)
-                instances = np.stack(instance_masks, axis=2).astype(np.bool)
+                instances = np.stack(instance_masks, axis=2).astype(np.bool8)
                 self.add_image(
                     "mapillary",
                     image_id=image_id,  # use file name as a unique image id
@@ -118,22 +117,6 @@ class MapillaryDataset(utils.Dataset):
         if image_info["source"] != "mapillary":
             return super(self.__class__, self).load_mask(image_id)
         return image_info['instance'], image_info['classes']
-        # # Convert polygons to a bitmap mask of shape
-        # # [height, width, instance_count]
-        # info = self.image_info[image_id]
-        # mask = np.zeros([info["height"]+1, info["width"]+1, len(info["polygons"])],
-        #                 dtype=np.uint8)
-        # for i, p in enumerate(info["polygons"]):
-        #     # Get indexes of pixels inside the polygon and set them to 1
-        #     rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
-        #     mask[rr, cc, i] = 1
-
-        # Return mask, and array of class IDs of each instance. Since we have
-        # one class ID only, we return an array of 1s
-
-
-
-        #return mask.astype(np.bool), np.ones([mask.shape[-1]], dtype=np.int32)
 
     def image_reference(self, image_id):
         """Return the path of the image."""
