@@ -84,11 +84,12 @@ class MapillaryDataset(utils.Dataset):
         labels = config['labels']
 
         # print labels
+        data_classes = set()
         print("There are {} labels in the config file".format(len(labels)))
         for label_id, label in enumerate(labels):
             if self.dataset_config.SELECTED_LABELS:
-                if not label["name"] in self.dataset_config.SELECTED_LABELS:
-                    continue
+                if label["name"] in self.dataset_config.SELECTED_LABELS:
+                    data_classes.add(label_id)
             self.add_class("mapillary", label_id, label["name"])
             print("{:>30} ({:2d}): {:<40} has instances: {}".format(label["readable"], label_id, label["name"], label["instances"]))
 
@@ -110,12 +111,19 @@ class MapillaryDataset(utils.Dataset):
                 instance_label_array = np.array(instance_array / 256, dtype=np.uint8)
                 # instance_ids_array = np.array(instance_array % 256, dtype=np.uint8)
                 classes = np.unique(instance_label_array)
-                classes = classes.astype('int32')
+                filtered_classes = []
                 instance_masks = []
                 for clazz in classes:
+                    if not clazz in data_classes:
+                        continue
+                    filtered_classes.append(clazz)
                     layer = np.zeros(instance_label_array.shape, dtype=np.bool8)
                     layer[instance_label_array == clazz] = True
                     instance_masks.append(layer)
+                result_classes = np.array(filtered_classes)
+                result_classes = result_classes.astype('int32')
+                if not instance_masks:
+                    continue
                 instances = np.stack(instance_masks, axis=2).astype(np.bool8)
                 self.add_image(
                     "mapillary",
@@ -123,7 +131,7 @@ class MapillaryDataset(utils.Dataset):
                     path=image_path,
                     width=instance_image.width, height=instance_image.height,
                     instance=instances,
-                    classes=classes
+                    classes=result_classes
                 )
 
     def load_mask(self, image_id):

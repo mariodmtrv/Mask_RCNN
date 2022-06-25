@@ -8,7 +8,6 @@ import numpy as np
 
 def test_main():
     config = MapillaryConfig()
-    config.SELECTED_LABELS = {}
     dataset = MapillaryDataset()
     dataset.set_config(config)
     DATASET = '/home/mario/mapillary-vistas/mapillary_25'
