@@ -7,8 +7,8 @@ labels_relative_path = "labels"
 instances_relative_path = "instances"
 panoptic_relative_path = "panoptic"
 
-root_path = '/home/mario/mapilary-vistas/mapilary'
-target_root_path = '/home/mario/mapilary-vistas/mapillary_25'
+root_path = '/home/mario/mapillary-vistas/mapillary'
+target_root_path = '/home/mario/mapillary-vistas/mapillary_1000'
 
 
 def make_dirs(set_type):
@@ -41,7 +41,7 @@ def main():
     os.makedirs(target_root_path, exist_ok=True)
     for set_type in ['training', 'validation']:
         make_dirs(set_type)
-    target_count = 25
+    target_count = 1000
     for set_type in ['training', 'validation']:
         handle_set(set_type, target_count)
     handle_test_set(target_count)

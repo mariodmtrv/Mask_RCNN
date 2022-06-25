@@ -8,9 +8,11 @@ import numpy as np
 
 def test_main():
     config = MapillaryConfig()
+    config.SELECTED_LABELS = {}
     dataset = MapillaryDataset()
-    DATASET = '/home/mario/mapilary-vistas/mapillary_25'
-    dataset.load_mapillary(DATASET, 'training')
+    dataset.set_config(config)
+    DATASET = '/home/mario/mapillary-vistas/mapillary_25'
+    dataset.load_mapillary(DATASET, 'train')
     dataset.prepare()
     # image_ids = np.random.choice(dataset.image_ids, 4)
     # for image_id in image_ids:

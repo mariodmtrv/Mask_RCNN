@@ -40,13 +40,26 @@ class MapillaryConfig(Config):
     IMAGES_PER_GPU = 2
 
     # Number of classes (including background)
-    NUM_CLASSES = 1 + 66  # Background + categories from the config
-
+    #NUM_CLASSES = 1 + 66  # Background + categories from the config
+    NUM_CLASSES = 66 # Skipping background
     # Number of training steps per epoch
     STEPS_PER_EPOCH = 25
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
+
+    SELECTED_LABELS = {"animal--bird",
+                       "human--person",
+                       "human--rider--bicyclist",
+                       "human--rider--motorcyclist",
+                       "object--bench",
+                       "object--vehicle--car",
+                       "object--fire-hydrant",
+                       "object--traffic-light",
+                       "object--vehicle--bus",
+                       "object--vehicle--motorcycle",
+                       "object--vehicle--truck",
+                       "background"}
 
 
 ############################################################
@@ -54,13 +67,16 @@ class MapillaryConfig(Config):
 ############################################################
 
 class MapillaryDataset(utils.Dataset):
+    dataset_config: MapillaryConfig
+
+    def set_config(self, dataset_config: MapillaryConfig):
+        self.dataset_config = dataset_config
 
     def load_mapillary(self, dataset_dir, subset):
         """Load a subset of the Mapillary dataset.
         dataset_dir: Root directory of the dataset.
         subset: Subset to load: train or val
         """
-        # self.add_class("balloon", 1, "balloon")
         # read in config file
         with open('config.json') as config_file:
             config = json.load(config_file)
@@ -70,6 +86,9 @@ class MapillaryDataset(utils.Dataset):
         # print labels
         print("There are {} labels in the config file".format(len(labels)))
         for label_id, label in enumerate(labels):
+            if self.dataset_config.SELECTED_LABELS:
+                if not self.dataset_config.SELECTED_LABELS[label["name"]]:
+                    continue
             self.add_class("mapillary", label_id, label["name"])
             print("{:>30} ({:2d}): {:<40} has instances: {}".format(label["readable"], label_id, label["name"], label["instances"]))
 
@@ -234,13 +253,13 @@ if __name__ == '__main__':
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(
-        description='Train Mask R-CNN to detect balloons.')
+        description='Train Mask R-CNN to detect Mapillary concepts.')
     parser.add_argument("command",
                         metavar="<command>",
                         help="'train' or 'splash'")
     parser.add_argument('--dataset', required=False,
-                        metavar="/path/to/balloon/dataset/",
-                        help='Directory of the Balloon dataset')
+                        metavar="/path/to/mapillary/dataset/",
+                        help='Directory of the Mapillary dataset')
     parser.add_argument('--weights', required=True,
                         metavar="/path/to/weights.h5",
                         help="Path to weights .h5 file or 'coco'")

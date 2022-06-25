@@ -298,7 +298,7 @@ def display_top_masks(image, mask, class_ids, class_names, limit=4):
         m = mask[:, :, np.where(class_ids == class_id)[0]]
         m = np.sum(m * np.arange(1, m.shape[-1] + 1), -1)
         to_display.append(m)
-        titles.append(class_names[class_id] if class_id != -1 else "-")
+        titles.append(class_names[class_id - 1] if class_id != -1 else "-")
     display_images(to_display, titles=titles, cols=limit + 1, cmap="Blues_r")
 
 
