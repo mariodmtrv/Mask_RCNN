@@ -87,7 +87,7 @@ class MapillaryDataset(utils.Dataset):
         print("There are {} labels in the config file".format(len(labels)))
         for label_id, label in enumerate(labels):
             if self.dataset_config.SELECTED_LABELS:
-                if not self.dataset_config.SELECTED_LABELS[label["name"]]:
+                if not label["name"] in self.dataset_config.SELECTED_LABELS:
                     continue
             self.add_class("mapillary", label_id, label["name"])
             print("{:>30} ({:2d}): {:<40} has instances: {}".format(label["readable"], label_id, label["name"], label["instances"]))
