@@ -159,7 +159,7 @@ class MapillaryDataset(utils.Dataset):
             super(self.__class__, self).image_reference(image_id)
 
 
-def train(model, learning_rate=0.001, epochs = 1):
+def train(model, learning_rate=0.001, epochs=1):
     """Train the model."""
     # Training dataset.
     dataset_config = MapillaryConfig()
@@ -170,6 +170,7 @@ def train(model, learning_rate=0.001, epochs = 1):
 
     # Validation dataset
     dataset_val = MapillaryDataset()
+    dataset_val.set_config(dataset_config)
     dataset_val.load_mapillary(args.dataset, "val")
     dataset_val.prepare()
 
