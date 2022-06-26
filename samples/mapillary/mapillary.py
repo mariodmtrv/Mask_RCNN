@@ -88,7 +88,7 @@ class MapillaryDataset(utils.Dataset):
         data_classes = set()
         print("There are {} labels in the config file".format(len(labels)))
         for label_id, label in enumerate(labels):
-            if self.dataset_config.SELECTED_LABELS:
+            if self.dataset_config and self.dataset_config.SELECTED_LABELS:
                 if label["name"] in self.dataset_config.SELECTED_LABELS:
                     data_classes.add(label_id)
             self.add_class("mapillary", label_id, label["name"])
@@ -159,7 +159,7 @@ class MapillaryDataset(utils.Dataset):
             super(self.__class__, self).image_reference(image_id)
 
 
-def train(model, learning_rate=0.001):
+def train(model, learning_rate=0.001, epochs = 1):
     """Train the model."""
     # Training dataset.
     config = MapillaryConfig()
@@ -178,7 +178,6 @@ def train(model, learning_rate=0.001):
     # COCO trained weights, we don't need to train too long. Also,
     # no need to train all layers, just the heads should do it.
     print("Training network heads")
-    epochs = 8
     model.train(dataset_train, dataset_val,
                 learning_rate=learning_rate,
                 epochs=epochs,
@@ -284,6 +283,10 @@ if __name__ == '__main__':
                         default=0.001,
                         # metavar="/path/to/logs/",
                         help='Learning rate for the model')
+    parser.add_argument('--epochs', required=False,
+                        default=1,
+                        # metavar="/path/to/logs/",
+                        help='Number of learning epochs')
     parser.add_argument('--image', required=False,
                         metavar="path or URL to image",
                         help='Image to apply the color splash effect on')
@@ -339,8 +342,14 @@ if __name__ == '__main__':
         weights_path = args.weights
 
     learning_rate = 0.001
+
     if args.learningrate:
         learning_rate = args.learningrate
+
+    epochs = 1
+
+    if args.epochs:
+        epochs = args.epochs
 
     # Load weights
     print("Loading weights ", weights_path)
@@ -355,7 +364,7 @@ if __name__ == '__main__':
 
     # Train or evaluate
     if args.command == "train":
-        train(model, learning_rate)
+        train(model, learning_rate, epochs)
     elif args.command == "splash":
         detect_and_color_splash(model, image_path=args.image,
                                 video_path=args.video)
