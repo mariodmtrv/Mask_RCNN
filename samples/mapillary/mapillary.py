@@ -6,6 +6,7 @@ import numpy as np
 import skimage.draw
 import warnings
 from numpy import zeros, newaxis
+from pympler import tracker
 from PIL import Image
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -41,7 +42,7 @@ class MapillaryConfig(Config):
 
     # Number of classes (including background)
     #NUM_CLASSES = 1 + 66  # Background + categories from the config
-    NUM_CLASSES = 66 # Skipping background
+    NUM_CLASSES = 1 + 11
     # Number of training steps per epoch
     STEPS_PER_EPOCH = 25
 
@@ -101,6 +102,7 @@ class MapillaryDataset(utils.Dataset):
         images_dir = "{}/images".format(dataset_dir)
         for item in os.listdir(images_dir):
             if os.path.isfile(os.path.join(images_dir, item)):
+                # tr = tracker.SummaryTracker()
                 image_id = os.path.splitext(item)[0]
                 image_path = "{}/images/{}.jpg".format(dataset_dir, image_id)
                 instance_path = "{}/instances/{}.png".format(dataset_dir, image_id)
@@ -133,6 +135,7 @@ class MapillaryDataset(utils.Dataset):
                     instance=instances,
                     classes=result_classes
                 )
+                # tr.print_diff()
 
     def load_mask(self, image_id):
         """Generate instance masks for an image.
@@ -156,10 +159,12 @@ class MapillaryDataset(utils.Dataset):
             super(self.__class__, self).image_reference(image_id)
 
 
-def train(model):
+def train(model, learning_rate=0.001):
     """Train the model."""
     # Training dataset.
+    config = MapillaryConfig()
     dataset_train = MapillaryDataset()
+    dataset_train.set_config(config)
     dataset_train.load_mapillary(args.dataset, "train")
     dataset_train.prepare()
 
@@ -173,9 +178,9 @@ def train(model):
     # COCO trained weights, we don't need to train too long. Also,
     # no need to train all layers, just the heads should do it.
     print("Training network heads")
-    epochs = 5
+    epochs = 8
     model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE,
+                learning_rate=learning_rate,
                 epochs=epochs,
                 layers='heads')
 
@@ -275,6 +280,10 @@ if __name__ == '__main__':
                         default=DEFAULT_LOGS_DIR,
                         metavar="/path/to/logs/",
                         help='Logs and checkpoints directory (default=logs/)')
+    parser.add_argument('--learningrate', required=False,
+                        default=0.001,
+                        # metavar="/path/to/logs/",
+                        help='Learning rate for the model')
     parser.add_argument('--image', required=False,
                         metavar="path or URL to image",
                         help='Image to apply the color splash effect on')
@@ -329,6 +338,10 @@ if __name__ == '__main__':
     else:
         weights_path = args.weights
 
+    learning_rate = 0.001
+    if args.learningrate:
+        learning_rate = args.learningrate
+
     # Load weights
     print("Loading weights ", weights_path)
     if args.weights.lower() == "coco":
@@ -342,7 +355,7 @@ if __name__ == '__main__':
 
     # Train or evaluate
     if args.command == "train":
-        train(model)
+        train(model, learning_rate)
     elif args.command == "splash":
         detect_and_color_splash(model, image_path=args.image,
                                 video_path=args.video)
