@@ -162,9 +162,9 @@ class MapillaryDataset(utils.Dataset):
 def train(model, learning_rate=0.001, epochs = 1):
     """Train the model."""
     # Training dataset.
-    config = MapillaryConfig()
+    dataset_config = MapillaryConfig()
     dataset_train = MapillaryDataset()
-    dataset_train.set_config(config)
+    dataset_train.set_config(dataset_config)
     dataset_train.load_mapillary(args.dataset, "train")
     dataset_train.prepare()
 
