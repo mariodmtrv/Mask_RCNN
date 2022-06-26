@@ -345,12 +345,12 @@ if __name__ == '__main__':
     learning_rate = 0.001
 
     if args.learningrate:
-        learning_rate = args.learningrate
+        learning_rate = float(args.learningrate)
 
     epochs = 1
 
     if args.epochs:
-        epochs = args.epochs
+        epochs = int(args.epochs)
 
     # Load weights
     print("Loading weights ", weights_path)
