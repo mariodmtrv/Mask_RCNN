@@ -95,10 +95,10 @@ class MapillaryDataset(utils.Dataset):
         for label_id, label in enumerate(labels):
             if self.dataset_config and self.dataset_config.SELECTED_LABELS:
                 if label["name"] in self.dataset_config.SELECTED_LABELS.keys():
-                    data_classes[label_id + 1] = self.dataset_config.SELECTED_LABELS[label["name"]]
-                    self.add_class("mapillary", data_classes[label_id + 1], label["name"])
+                    data_classes[label_id] = self.dataset_config.SELECTED_LABELS[label["name"]]
+                    self.add_class("mapillary", data_classes[label_id], label["name"])
                     print(
-                        "{:>30} ({:2d}): {:<40} has instances: {}".format(label["readable"], data_classes[label_id + 1],
+                        "{:>30} ({:2d}): {:<40} has instances: {}".format(label["readable"], data_classes[label_id],
                                                                           label["name"], label["instances"]))
 
         # Train or validation dataset?
@@ -118,22 +118,22 @@ class MapillaryDataset(utils.Dataset):
                 # now we split the instance_array into labels and instance ids
                 instance_label_array = np.array(instance_array / 256, dtype=np.uint8)
                 instance_ids_array = np.array(instance_array % 256, dtype=np.uint8)
-                instance_ids = np.unique(instance_ids_array)
-                filtered_classes = []
+
                 instance_masks = []
-                for instance_id in instance_ids:
-                    cells = np.where(instance_ids_array == instance_id)
-                    first_cell_x = cells[0][0]
-                    first_cell_y = cells[1][0]
-                    instance_class = instance_label_array[first_cell_x][first_cell_y]
-                    print("Instance class " + str(instance_class))
-                    if not instance_class in data_classes.keys():
+                instance_classes = []
+                classes = np.unique(instance_label_array)
+                for object_class in classes:
+                    if not object_class in data_classes.keys():
                         continue
-                    filtered_classes.append(data_classes[instance_class])
-                    layer = np.zeros(instance_ids_array.shape, dtype=np.bool8)
-                    layer[instance_ids_array == instance_id] = True
-                    instance_masks.append(layer)
-                result_classes = np.array(filtered_classes)
+                    instance_cells = np.where(instance_label_array == object_class)
+                    entry_ids = np.unique(instance_ids_array[instance_cells])
+                    for entry_id in entry_ids:
+                        layer = np.zeros(instance_ids_array.shape, dtype=np.bool8)
+                        layer[(instance_label_array == object_class) & (instance_ids_array == entry_id)] = True
+                        instance_classes.append(data_classes[object_class])
+                        instance_masks.append(layer)
+
+                result_classes = np.array(instance_classes)
                 result_classes = result_classes.astype('int32')
                 if not instance_masks:
                     continue
