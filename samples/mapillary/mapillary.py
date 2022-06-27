@@ -8,6 +8,7 @@ import warnings
 from numpy import zeros, newaxis
 from pympler import tracker
 from PIL import Image
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Root directory of the project
@@ -25,6 +26,7 @@ COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 # through the command line argument --logs
 DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 
+
 ############################################################
 #  Configurations
 ############################################################
@@ -41,7 +43,7 @@ class MapillaryConfig(Config):
     IMAGES_PER_GPU = 2
 
     # Number of classes (including background)
-    #NUM_CLASSES = 1 + 66  # Background + categories from the config
+    # NUM_CLASSES = 1 + 66  # Background + categories from the config
     NUM_CLASSES = 1 + 11
     # Number of training steps per epoch
     STEPS_PER_EPOCH = 25
@@ -49,18 +51,17 @@ class MapillaryConfig(Config):
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
 
-    SELECTED_LABELS = {"animal--bird",
-                       "human--person",
-                       "human--rider--bicyclist",
-                       "human--rider--motorcyclist",
-                       "object--bench",
-                       "object--vehicle--car",
-                       "object--fire-hydrant",
-                       "object--traffic-light",
-                       "object--vehicle--bus",
-                       "object--vehicle--motorcycle",
-                       "object--vehicle--truck",
-                       "background"}
+    SELECTED_LABELS = {"animal--bird": 0,
+                       "human--person": 1,
+                       "human--rider--bicyclist": 2,
+                       "human--rider--motorcyclist": 3,
+                       "object--bench": 4,
+                       "object--vehicle--car": 5,
+                       "object--fire-hydrant": 6,
+                       "object--traffic-light": 7,
+                       "object--vehicle--bus": 8,
+                       "object--vehicle--motorcycle": 9,
+                       "object--vehicle--truck": 10}
 
 
 ############################################################
@@ -85,15 +86,20 @@ class MapillaryDataset(utils.Dataset):
         labels = config['labels']
 
         # print labels
-        data_classes = set()
+        data_classes = {}
         print("There are {} labels in the config file".format(len(labels)))
         for label_id, label in enumerate(labels):
-            if self.dataset_config and self.dataset_config.SELECTED_LABELS:
-                if label["name"] in self.dataset_config.SELECTED_LABELS:
-                    data_classes.add(label_id)
-            self.add_class("mapillary", label_id, label["name"])
-            print("{:>30} ({:2d}): {:<40} has instances: {}".format(label["readable"], label_id, label["name"], label["instances"]))
+            print("{:>30} ({:2d}): {:<40} has instances: {}".format(label["readable"], label_id, label["name"],
+                                                                    label["instances"]))
 
+        for label_id, label in enumerate(labels):
+            if self.dataset_config and self.dataset_config.SELECTED_LABELS:
+                if label["name"] in self.dataset_config.SELECTED_LABELS.keys():
+                    data_classes[label_id + 1] = self.dataset_config.SELECTED_LABELS[label["name"]]
+                    self.add_class("mapillary", data_classes[label_id + 1], label["name"])
+                    print(
+                        "{:>30} ({:2d}): {:<40} has instances: {}".format(label["readable"], data_classes[label_id + 1],
+                                                                          label["name"], label["instances"]))
 
         # Train or validation dataset?
         assert subset in ["train", "val"]
@@ -111,16 +117,21 @@ class MapillaryDataset(utils.Dataset):
 
                 # now we split the instance_array into labels and instance ids
                 instance_label_array = np.array(instance_array / 256, dtype=np.uint8)
-                # instance_ids_array = np.array(instance_array % 256, dtype=np.uint8)
-                classes = np.unique(instance_label_array)
+                instance_ids_array = np.array(instance_array % 256, dtype=np.uint8)
+                instance_ids = np.unique(instance_ids_array)
                 filtered_classes = []
                 instance_masks = []
-                for clazz in classes:
-                    if not clazz in data_classes:
+                for instance_id in instance_ids:
+                    cells = np.where(instance_ids_array == instance_id)
+                    first_cell_x = cells[0][0]
+                    first_cell_y = cells[1][0]
+                    instance_class = instance_label_array[first_cell_x][first_cell_y]
+                    print("Instance class " + str(instance_class))
+                    if not instance_class in data_classes.keys():
                         continue
-                    filtered_classes.append(clazz)
-                    layer = np.zeros(instance_label_array.shape, dtype=np.bool8)
-                    layer[instance_label_array == clazz] = True
+                    filtered_classes.append(data_classes[instance_class])
+                    layer = np.zeros(instance_ids_array.shape, dtype=np.bool8)
+                    layer[instance_ids_array == instance_id] = True
                     instance_masks.append(layer)
                 result_classes = np.array(filtered_classes)
                 result_classes = result_classes.astype('int32')
@@ -316,6 +327,8 @@ if __name__ == '__main__':
             # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
             GPU_COUNT = 1
             IMAGES_PER_GPU = 1
+
+
         config = InferenceConfig()
     config.display()
 
